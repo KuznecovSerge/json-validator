@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON Schema Validator (2020-12)</title>
+    <style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #1e1e2e;
+    color: #cdd6f4;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  h1 { margin: 0 0 6px; font-size: 24px; color: #89b4fa; }
+  .version { color: #6c7086; font-size: 12px; margin-bottom: 16px; }
+  .container { max-width: 1400px; margin: 0 auto; }
+  .editors {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  @media (max-width: 800px) { .editors { grid-template-columns: 1fr; } }
+  .editor-box {
+    display: flex;
+    flex-direction: column;
+    background: #313244;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #45475a;
+  }
+  .editor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: #181825;
+    border-bottom: 1px solid #45475a;
+    font-size: 13px;
+    font-weight: 600;
+    color: #a6adc8;
+  }
+  .editor-header .actions button {
+    background: transparent;
+    border: 1px solid #585b70;
+    color: #cdd6f4;
+    padding: 3px 8px;
+    margin-left: 4px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+  }
+  .editor-header .actions button:hover { background: #45475a; }
+  textarea {
+    width: 100%;
+    min-height: 400px;
+    padding: 12px;
+    border: none;
+    background: #1e1e2e;
+    color: #cdd6f4;
+    font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    resize: vertical;
+    outline: none;
+  }
+  .controls {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    background: #313244;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid #45475a;
+  }
+  button.primary {
+    background: #89b4fa;
+    color: #1e1e2e;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button.primary:hover { background: #b4befe; }
+  button.primary:disabled {
+    background: #585b70;
+    cursor: not-allowed;
+  }
+  select, .controls label {
+    background: #1e1e2e;
+    color: #cdd6f4;
+    border: 1px solid #45475a;
+    padding: 7px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    outline: none;
+  }
+  .controls label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    border: none;
+    padding: 0;
+    color: #a6adc8;
+    cursor: pointer;
+  }
+  .result {
+    background: #313244;
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid #45475a;
+    min-height: 60px;
+  }
+  .result.success { border-color: #a6e3a1; background: rgba(166, 227, 161, 0.08); }
+  .result.error   { border-color: #f38ba8; background: rgba(243, 139, 168, 0.08); }
+  .result h3 { margin: 0 0 12px; font-size: 16px; }
+  .result.success h3 { color: #a6e3a1; }
+  .result.error h3   { color: #f38ba8; }
+  .error-item {
+    background: #1e1e2e;
+    border-left: 3px solid #f38ba8;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    font-family: "JetBrains Mono", Consolas, monospace;
+    font-size: 12.5px;
+    line-height: 1.5;
+  }
+  .error-item .path { color: #f9e2af; font-weight: 600; display: block; margin-bottom: 4px; }
+  .error-item .msg  { color: #f38ba8; }
+  .error-item .params { color: #a6adc8; font-size: 11.5px; margin-top: 4px; }
+  .hint { color: #6c7086; font-size: 12px; margin-top: 4px; }
+  .loading {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid #6c7086;
+    border-top-color: #89b4fa;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+  <h1>🔍 JSON Schema Validator</h1>
+  <div class="version">Ajv v8, схема 2020-12</div>
+
+  <div class="editors">
+    <div class="editor-box">
+      <div class="editor-header">
+        <span>JSON Schema</span>
+        <div class="actions">
+          <button id="btn-format-schema">Форматировать</button>
+          <button id="btn-sample-schema">Пример</button>
+          <button id="btn-clear-schema">Очистить</button>
+        </div>
+      </div>
+      <textarea id="schema" placeholder='Вставьте JSON Schema сюда...'></textarea>
+    </div>
+
+    <div class="editor-box">
+      <div class="editor-header">
+        <span>JSON (ответ)</span>
+        <div class="actions">
+          <button id="btn-format-data">Форматировать</button>
+          <button id="btn-sample-data">Пример</button>
+          <button id="btn-clear-data">Очистить</button>
+        </div>
+      </div>
+      <textarea id="data" placeholder='Вставьте JSON для проверки сюда...'></textarea>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="primary" id="btn-validate">▶ Валидировать</button>
+
+    <label><input type="checkbox" id="allErrors" checked> Все ошибки</label>
+    <label><input type="checkbox" id="strict"> Strict mode</label>
+  </div>
+
+  <div class="result" id="result">
+    <div class="hint">Нажмите «Валидировать» для проверки.</div>
+  </div>
+</div>
+</body>
+</html>
