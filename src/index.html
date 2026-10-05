@@ -150,6 +150,82 @@
     margin-right: 6px;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---- Сворачивание блоков JSON ---- */
+  .fold-wrap {
+    position: relative;
+    flex: 1;
+    display: flex;
+    min-height: 400px;
+  }
+  .fold-wrap textarea {
+    flex: 1;
+    padding-left: 34px; /* место под зону стрелок */
+    background: transparent;
+    caret-color: #cdd6f4;
+    position: relative;
+    z-index: 2;
+  }
+  .fold-mirror {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    overflow: hidden;
+    pointer-events: none;
+    font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #cdd6f4;
+    background: #1e1e2e;
+    padding: 12px 12px 12px 34px;
+    white-space: pre-wrap;
+    word-break: normal;
+    overflow-wrap: break-word;
+  }
+  .fm {
+    position: relative;
+    min-height: calc(13px * 1.5);
+  }
+  .fm .fg {
+    position: absolute;
+    left: -26px;
+    width: 20px;
+    text-align: center;
+    color: #6c7086;
+    user-select: none;
+  }
+  .fm-hover .fg { color: #89b4fa; }
+  .fm-closed > .ft { opacity: 0.55; }
+  .fm-ellipsis {
+    display: flex;
+    align-items: center;
+    background: #181825;
+    border-radius: 4px;
+    margin: 1px 0;
+    height: auto !important;
+    min-height: 19.5px;
+  }
+  .fm-ellipsis .fe {
+    color: #6c7086;
+    font-style: italic;
+    font-size: 12px;
+    padding-left: 4px;
+    background: rgba(137, 180, 250, 0.08);
+    border: 1px dashed #45475a;
+    border-radius: 4px;
+    padding: 0 8px;
+  }
+  .fold-gutter-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 34px;
+    height: 100%;
+    z-index: 3;
+    background: transparent;
+  }
+  .hint-fold { color: #6c7086; font-size: 11.5px; margin-top: 10px; }
+
     </style>
 </head>
 <body>
@@ -163,6 +239,8 @@
         <div class="actions">
           <button id="btn-format-schema">Форматировать</button>
           <button id="btn-sample-schema">Пример</button>
+          <button id="btn-foldall-schema" title="Свернуть все блоки">⊟ Свернуть все</button>
+          <button id="btn-unfoldall-schema" title="Развернуть все блоки">⊞ Развернуть все</button>
           <button id="btn-clear-schema">Очистить</button>
         </div>
       </div>
@@ -175,6 +253,8 @@
         <div class="actions">
           <button id="btn-format-data">Форматировать</button>
           <button id="btn-sample-data">Пример</button>
+          <button id="btn-foldall-data" title="Свернуть все блоки">⊟ Свернуть все</button>
+          <button id="btn-unfoldall-data" title="Развернуть все блоки">⊞ Развернуть все</button>
           <button id="btn-clear-data">Очистить</button>
         </div>
       </div>
@@ -191,6 +271,7 @@
 
   <div class="result" id="result">
     <div class="hint">Нажмите «Валидировать» для проверки.</div>
+    <div class="hint-fold">💡 Совет: чтобы свернуть блок JSON, нажмите на стрелку ▸ слева от строки с «{» или «[». Также доступны кнопки «Свернуть все» / «Развернуть все» над редакторами. Данные при сворачивании не изменяются.</div>
   </div>
 </div>
 </body>

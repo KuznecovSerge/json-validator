@@ -1,5 +1,6 @@
 import Ajv2020 from "ajv/dist/2020";
 import addFormats from "ajv-formats";
+import { JsonFolder } from "./json-fold.js";
 
 const schemaField = document.getElementById('schema');
 const dataField = document.getElementById('data');
@@ -8,8 +9,11 @@ const allErrorsCheckbox = document.getElementById('allErrors');
 const strictCheckbox = document.getElementById('strict');
 
 function validate() {
-    const schemaText = document.getElementById('schema').value;
-    const jsonText = document.getElementById('data').value;
+    // значение textarea всегда полное (сворачивание — только визуальное),
+    // перед чтением синхронизируем зеркала редакторов
+    refreshFolders();
+    const schemaText = schemaField.value;
+    const jsonText = dataField.value;
     const resultDiv = document.getElementById('result');
     
     resultDiv.innerHTML = '';
@@ -137,6 +141,22 @@ document.getElementById('btn-sample-data').addEventListener('click', loadSampleD
 document.getElementById('btn-clear-data').addEventListener('click', () => clearField('data'));
 
 document.getElementById('btn-validate').addEventListener('click', validate);
+
+// ---------- Сворачивание блоков JSON ----------
+const folders = {
+  schema: new JsonFolder(schemaField),
+  data: new JsonFolder(dataField),
+};
+
+function refreshFolders() {
+  folders.schema.refresh();
+  folders.data.refresh();
+}
+
+for (const which of ['schema', 'data']) {
+  document.getElementById(`btn-foldall-${which}`).addEventListener('click', () => folders[which].foldAll());
+  document.getElementById(`btn-unfoldall-${which}`).addEventListener('click', () => folders[which].unfoldAll());
+}
 
 // Примеры при загрузке
 window.addEventListener('load', () => {
