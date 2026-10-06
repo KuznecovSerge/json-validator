@@ -1,19 +1,43 @@
 import Ajv2020 from "ajv/dist/2020";
 import addFormats from "ajv-formats";
-import { JsonFolder } from "./json-fold.js";
+import { JsonFolder, getFullValue } from "./json-fold.js";
+import { registerFolder, attachExternalSync } from "./external-sync.js";
 
 const schemaField = document.getElementById('schema');
 const dataField = document.getElementById('data');
+
+// ---------- Сворачивание блоков JSON (создаём папки как можно раньше,
+// до навешивания обработчиков кнопок) ----------
+const folders = {
+  schema: new JsonFolder(schemaField),
+  data: new JsonFolder(dataField),
+};
+registerFolder(schemaField, folders.schema);
+registerFolder(dataField, folders.data);
+attachExternalSync(); // перехват внешнего ta.value = ... (MutationObserver)
+
+function fullText(which) {
+  return getFullValue(which === 'schema' ? schemaField : dataField);
+}
+
+function setFullText(which, text) {
+  const f = which === 'schema' ? folders.schema : folders.data;
+  // пишем в модель folder'а и перерисовываем — так корректно работает
+  // режим маскирования при свёрнутых блоках
+  f.allLines = text.split("\n");
+  f.folded.clear();
+  f.refresh();
+}
 
 const allErrorsCheckbox = document.getElementById('allErrors');
 const strictCheckbox = document.getElementById('strict');
 
 function validate() {
-    // значение textarea всегда полное (сворачивание — только визуальное),
-    // перед чтением синхронизируем зеркала редакторов
+    // значение textarea может быть «замаскировано» (есть свёрнутые блоки) —
+    // читаем ПОЛНЫЙ текст из модели folder'а
     refreshFolders();
-    const schemaText = schemaField.value;
-    const jsonText = dataField.value;
+    const schemaText = fullText('schema');
+    const jsonText = fullText('data');
     const resultDiv = document.getElementById('result');
     
     resultDiv.innerHTML = '';
@@ -100,7 +124,7 @@ function escapeHtml(text) {
 }
 
 function loadSampleSchema() {
-  schemaField.value = JSON.stringify({
+  setFullText('schema', JSON.stringify({
     "$schema": "https://json-schema.org/draft/2020-12/schema",
     "type": "object",
     "properties": {
@@ -108,28 +132,28 @@ function loadSampleSchema() {
       "age": { "type": "integer", "minimum": 0 }
     },
     "required": ["name"]
-  }, null, 2);
+  }, null, 2));
 }
 
 function loadSampleData() {
-  dataField.value = JSON.stringify({
+  setFullText('data', JSON.stringify({
     "name": "John",
     "age": 30
-  }, null, 2);
+  }, null, 2));
 }
 
 function formatJSON(which) {
-  const el = which === 'schema' ? schemaField : dataField;
+  const text = fullText(which);
   try {
-    const parsed = JSON.parse(el.value);
-    el.value = JSON.stringify(parsed, null, 2);
+    const parsed = JSON.parse(text);
+    setFullText(which, JSON.stringify(parsed, null, 2));
   } catch (e) {
     alert('Невалидный JSON: ' + e.message);
   }
 }
 
 function clearField(which) {
-  (which === 'schema' ? schemaField : dataField).value = '';
+  setFullText(which, '');
 }
 
 document.getElementById('btn-format-schema').addEventListener('click', () => formatJSON('schema'));
@@ -141,12 +165,6 @@ document.getElementById('btn-sample-data').addEventListener('click', loadSampleD
 document.getElementById('btn-clear-data').addEventListener('click', () => clearField('data'));
 
 document.getElementById('btn-validate').addEventListener('click', validate);
-
-// ---------- Сворачивание блоков JSON ----------
-const folders = {
-  schema: new JsonFolder(schemaField),
-  data: new JsonFolder(dataField),
-};
 
 function refreshFolders() {
   folders.schema.refresh();
